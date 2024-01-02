@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Private
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import "@openzeppelin/contracts/access/manager/IAccessManaged.sol";

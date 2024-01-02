@@ -3,8 +3,7 @@
   "version": "0.3.0",
   "repository": "git@github.com:bgrusnak/solidity-icoset.git",
   "author": "Ilya A. Shlyakhovoy <bulgarus@inbox.ru>",
-  "license": "MIT",
-  "private": true,
+  "license": "MIT", 
   "files": [
     "/contracts/**/*.sol",
     "!/contracts/mocks/**/*"
