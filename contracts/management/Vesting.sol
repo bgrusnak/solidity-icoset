@@ -10,7 +10,7 @@ import "../structures/KPI.sol";
 import "./IAirdrop.sol";
 import "./IVesting.sol";
 
-contract Vesting is IVesting {
+abstract contract Vesting is IVesting {
     using EnumerableMap for EnumerableMap.Bytes32ToUintMap;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
 
@@ -51,7 +51,7 @@ contract Vesting is IVesting {
 
     /// @notice Update token address
     /// @param _token New token address.
-    function updateToken(address _token) external virtual {
+    function _updateToken(address _token) internal virtual {
         if (address(_token) == address(0)) {
             revert VestingEmptyToken();
         }
@@ -60,7 +60,7 @@ contract Vesting is IVesting {
 
     /// @notice Update token address
     /// @param _airdrop New token address.
-    function updateAirdrop(address _airdrop) external virtual {
+    function _updateAirdrop(address _airdrop) internal virtual {
         if (address(_airdrop) == address(0)) {
             revert VestingEmptyAirdrop();
         }
@@ -70,7 +70,7 @@ contract Vesting is IVesting {
     /// @notice Distribute the new vesting amount
     /// @param _to Receiver address.
     /// @param _amount Distributed amount.
-    function distribute(address _to, uint256 _amount) external virtual {
+    function _distribute(address _to, uint256 _amount) internal virtual {
         totalDistributed = totalDistributed + _amount;
         amountsDistributed.set(_to, amountsDistributed.get(_to) + _amount);
         emit Distribute(_to, _amount);
@@ -78,6 +78,11 @@ contract Vesting is IVesting {
 
     /// @notice Take the current unlocked amount
     function redeem() external virtual returns (uint256) {
+        return _redeem();
+    }
+
+    /// @notice Take the current unlocked amount
+    function _redeem() internal virtual returns (uint256) {
         uint256 free = (amountsDistributed.get(msg.sender) * totalKPI) / 1000;
         if (free <= amountsRedeemed.get(msg.sender))
             revert VestingEmptyRedeem();
@@ -96,17 +101,17 @@ contract Vesting is IVesting {
     /// @param _time timestamp
     /// @param _timeStatus status of the time
     /// @param _weight weight of the KPI parameter in the total KPI
-    function addKPI(
+    function _addKPI(
         bytes32 _code,
         uint256 _time,
         KPITimeStatus _timeStatus,
         uint16 _weight
-    ) external virtual {
+    ) internal virtual {
         if (kpiMap.contains(_code)) revert VestingKPIAlreadyDefined(_code);
         uint256 pos = kpi.length;
         kpi.push(KPI(_time, _timeStatus, 0, _weight));
         kpiMap.set(_code, pos);
-        computeKPI();
+        _computeKPI();
         emit KPIAdded(_code, _time, _timeStatus, _weight);
     }
 
@@ -115,12 +120,12 @@ contract Vesting is IVesting {
     /// @param _time timestamp
     /// @param _timeStatus status of the time
     /// @param _weight weight of the KPI parameter in the total KPI
-    function modifyKPI(
+    function _modifyKPI(
         bytes32 _code,
         uint256 _time,
         KPITimeStatus _timeStatus,
         uint16 _weight
-    ) external virtual {
+    ) internal virtual {
         if (!kpiMap.contains(_code)) revert VestingKPINotDefined(_code);
         if (_weight > 1000) revert VestingIncorrectWeight(_code, _weight);
         uint256 pos = kpiMap.get(_code);
@@ -128,25 +133,25 @@ contract Vesting is IVesting {
         kpi[pos].timeStatus = _timeStatus;
         kpi[pos].weight = _weight;
         emit KPIModified(_code, _time, _timeStatus, _weight);
-        computeKPI();
+        _computeKPI();
     }
 
     /// @notice Update the  KPI value
     /// @param _code The KPI id code
     /// @param _amount the current value of KPI
-    function updateKPI(bytes32 _code, uint16 _amount) external virtual {
+    function _updateKPI(bytes32 _code, uint16 _amount) internal virtual {
         if (!kpiMap.contains(_code)) revert VestingKPINotDefined(_code);
         if (_amount > 1000) revert VestingIncorrectAmount(_code, _amount);
         uint256 pos = kpiMap.get(_code);
         kpi[pos].current = _amount;
         emit KPIUpdated(_code, _amount);
-        computeKPI();
+        _computeKPI();
     }
 
     /// @notice Increase the  KPI value
     /// @param _code The KPI id code
     /// @param _amount the added value of KPI
-    function increaseKPI(bytes32 _code, uint16 _amount) external virtual {
+    function _increaseKPI(bytes32 _code, uint16 _amount) internal virtual {
         if (!kpiMap.contains(_code)) revert VestingKPINotDefined(_code);
         if (_amount > 1000) revert VestingIncorrectAmount(_code, _amount);
         uint256 pos = kpiMap.get(_code);
@@ -154,26 +159,30 @@ contract Vesting is IVesting {
         if (newVal > 1000) newVal = 1000;
         kpi[pos].current = uint16(newVal);
         emit KPIUpdated(_code, kpi[pos].current);
-        computeKPI();
+        _computeKPI();
     }
 
     /// @notice Remove the KPI from the list
     /// @param _code The KPI id code
-    function removeKPI(bytes32 _code) external virtual {
+    function _removeKPI(bytes32 _code) internal virtual {
         if (!kpiMap.contains(_code)) revert VestingKPINotDefined(_code);
         kpiMap.remove(_code);
         emit KPIRemoved(_code);
-        computeKPI();
+        _computeKPI();
     }
 
     /// @notice Get the KPI from the list
     /// @param _code The KPI id code
     function getKPI(bytes32 _code) external view virtual returns (KPI memory) {
+        return _getKPI(_code);
+    }
+
+    function _getKPI(bytes32 _code) internal view virtual returns (KPI memory) {
         if (!kpiMap.contains(_code)) revert VestingKPINotDefined(_code);
         return kpi[kpiMap.get(_code)];
     }
 
-    function computeKPI() internal {
+    function _computeKPI() internal {
         uint256 kpiLength = kpiMap.length();
         uint256 kpiTotal = 0;
         uint256 pos;
