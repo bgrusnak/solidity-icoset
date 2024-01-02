@@ -1,9 +1,12 @@
 {
   "name": "@bgrusnak/solidity-icoset",
   "version": "0.3.0",
-  "repository": "git@github.com:bgrusnak/solidity-icoset.git",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/bgrusnak/solidity-icoset.git"
+  },
   "author": "Ilya A. Shlyakhovoy <bulgarus@inbox.ru>",
-  "license": "MIT", 
+  "license": "MIT",
   "files": [
     "/contracts/**/*.sol",
     "!/contracts/mocks/**/*"
@@ -49,5 +52,15 @@
     "presale",
     "airdrop",
     "vesting"
-  ]
+  ],
+  "description": "The set of the contracts used to deploy the ICO/IDO/IEO",
+  "bugs": {
+    "url": "https://github.com/bgrusnak/solidity-icoset/issues"
+  },
+  "homepage": "https://github.com/bgrusnak/solidity-icoset#readme",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+  }
 }
