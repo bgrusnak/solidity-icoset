@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20; 
+pragma solidity ^0.8.20;
 
 /**
  * Defines the contract for the airdrop with the optional attach to the vesting
@@ -12,7 +12,7 @@ interface IAirdrop {
      * @dev Indicates an error related to the already redeemed amount. Used in redeem.
      * @param target Address who calls redeem..
      */
-    error AirdropAlreadyRedeemed(address target);
+    error AlreadyRedeemed(address target);
 
     /**
      * @dev Indicates an error related to the wrong tree validation. Used in redeem.
@@ -20,20 +20,28 @@ interface IAirdrop {
      * @param amount Amount redeemed.
      * @param proof The proof provided.
      */
-    error AirdropWrongPath(address target, uint256 amount, bytes32[] proof);
+    error WrongPath(address target, uint256 amount, bytes32[] proof);
+
+    /**
+     * @dev Indicates an error related to the end of the airdrop
+     */
+    error AirdropIsFinished();
 
     /**
      * @dev Indicates an error when empty token is provided.
      */
-    error AirdropEmptyToken();
+    error EmptyToken();
 
     event Redeem(address indexed account, uint256 amount);
     event Vesting(address indexed account, uint256 amount);
 
     /// @notice Addresses can redeem their tokens.
     /// @param proof Proof path.
-    function redeem(address target, bytes32[] memory proof,
-        uint256 redeemAmount) external;
+    function redeem(
+        address target,
+        bytes32[] memory proof,
+        uint256 redeemAmount
+    ) external;
 
     /// @notice Update merkle root
     /// @param _root Merkle root of the addresses white list.

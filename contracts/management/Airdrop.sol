@@ -14,15 +14,25 @@ contract Airdrop is IAirdrop {
     using BitMaps for BitMaps.BitMap;
 
     bytes32 public root;
+    bool public airdropFinished;
     IERC20 private token;
     IVesting private vesting;
     BitMaps.BitMap private redeemed;
 
+    /**
+     * @dev Modifier to make a function callable only while aidrop working
+     *
+     */
+    modifier notFinished() {
+        if (airdropFinished) revert AirdropIsFinished();
+        _;
+    }
+
     constructor(IERC20 _token, IVesting _vesting, bytes32 _root) {
         if (address(_token) == address(0)) {
-            revert AirdropEmptyToken();
+            revert EmptyToken();
         }
-        if (address(_token) == address(0)) revert AirdropEmptyToken();
+        if (address(_token) == address(0)) revert EmptyToken();
         root = _root;
         token = _token;
         vesting = _vesting;
@@ -34,16 +44,16 @@ contract Airdrop is IAirdrop {
         address target,
         bytes32[] memory proof,
         uint256 redeemAmount
-    ) external virtual {
+    ) external virtual notFinished {
         uint256 redeemPos = uint256(uint160(target));
         if (redeemed.get(redeemPos)) {
-            revert AirdropAlreadyRedeemed(target);
+            revert AlreadyRedeemed(target);
         }
         bytes32 leaf = keccak256(
             bytes.concat(keccak256(abi.encode(target, redeemAmount)))
         );
         if (!MerkleProof.verify(proof, root, leaf)) {
-            revert AirdropWrongPath(target, redeemAmount, proof);
+            revert WrongPath(target, redeemAmount, proof);
         }
         redeemed.set(redeemPos);
         if (address(vesting) == address(0)) {
@@ -66,7 +76,7 @@ contract Airdrop is IAirdrop {
     /// @param _token New token address.
     function updateToken(address _token) external virtual {
         if (address(_token) == address(0)) {
-            revert AirdropEmptyToken();
+            revert EmptyToken();
         }
         token = IERC20(_token);
     }
@@ -82,7 +92,6 @@ contract Airdrop is IAirdrop {
     /// @dev Only manager can perform this transaction. It selfdestructs the contract.
     function cancelAirDrop(address payable _to) external virtual {
         uint256 contractBalance = token.balanceOf(address(this));
-        token.transfer(_to, contractBalance);
-        selfdestruct(_to);
+        if (token.transfer(_to, contractBalance)) airdropFinished = true;
     }
 }

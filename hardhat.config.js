@@ -1,6 +1,8 @@
 require("@nomicfoundation/hardhat-toolbox");
 require('@nomicfoundation/hardhat-ethers'); 
 require('hardhat-exposed');
+require('solidity-coverage');
+require("hardhat-contract-sizer");
 module.exports = {
   solidity: "0.8.20",
   exposed: {
@@ -10,4 +12,10 @@ module.exports = {
     outDir: 'contracts-exposed',
     exclude: ['vendor/**/*'],
   },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    strict: true,
+  }
 };
