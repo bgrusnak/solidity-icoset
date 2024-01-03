@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-import "@openzeppelin/contracts/access/manager/AccessManaged.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import "../utils/IFreezable.sol";
 
 /**
  * @title IPurchase
@@ -17,6 +9,7 @@ import "../utils/IFreezable.sol";
 
 interface IPurchase {
     error EmptyToken();
+    error EmptyNativeRate();
     error EmptyCurrency();
     error EmptyRate();
     error TooBigRate(uint256 rate);
@@ -26,6 +19,8 @@ interface IPurchase {
     error NotOwned(address target);
     error EmptyNewToken();
     error IncorrectPosition();
+    error EmptyChainLink();
+    error LowRate();
     error UnsufficientBalance(
         address buyer,
         address currency,
@@ -64,6 +59,14 @@ interface IPurchase {
     function setToken(address _token) external;
 
     function token() external view returns (address);
+
+    function setChainLinkInterface(address _chainlink) external;
+
+    function chainLinkInterface() external view returns (address);
+
+    function setNativeRate(uint256 _native) external;
+
+    function nativeRate() external view returns (uint256);
 
     function setVesting(address _vesting) external;
 
