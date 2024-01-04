@@ -1,6 +1,16 @@
 # ICOSet
 
-The set of the contracts used to deploy the ICO/IDO/IEO
+The set of the contracts used to deploy the ICO/IDO/IEO.
+
+Install it using
+``` 
+npm install @bgrusnak/solidity-icoset
+```
+or
+```
+yarn add @bgrusnak/solidity-icoset
+```
+
 
 ## Contracts
 ### Freezable
