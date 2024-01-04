@@ -54,11 +54,11 @@ abstract contract Airdrop is IAirdrop {
         }
         redeemed.set(redeemPos);
         if (address(vesting) == address(0)) {
-            token.transfer(target, redeemAmount);
+            if (!token.transfer(target, redeemAmount)) revert NotEnoughFunds(redeemAmount);
             emit Redeem(target, redeemAmount);
             return;
         }
-        token.transfer(address(vesting), redeemAmount);
+        if (!token.transfer(address(vesting), redeemAmount)) revert NotEnoughFunds(redeemAmount);
         vesting.distribute(target, redeemAmount);
         emit Vesting(target, redeemAmount);
     }
@@ -89,6 +89,7 @@ abstract contract Airdrop is IAirdrop {
     /// @dev Only manager can perform this transaction. It selfdestructs the contract.
     function _cancelAirDrop(address payable _to) internal virtual {
         uint256 contractBalance = token.balanceOf(address(this));
-        if (token.transfer(_to, contractBalance)) airdropFinished = true;
+        if (token.transfer(_to, contractBalance)) revert CannotReturnFunds();
+        airdropFinished = true;
     }
 }

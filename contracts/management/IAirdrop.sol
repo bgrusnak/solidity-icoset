@@ -32,6 +32,13 @@ interface IAirdrop {
      */
     error EmptyToken();
 
+    /**
+     * @dev Indicates an error when no tokens are distributed to the airdrop.
+     */
+    error NotEnoughFunds(uint256 redeemAmount);
+
+    error CannotReturnFunds();
+
     event Redeem(address indexed account, uint256 amount);
     event Vesting(address indexed account, uint256 amount);
 
