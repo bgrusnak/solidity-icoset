@@ -3,10 +3,8 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/manager/AccessManaged.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./IAirdrop.sol";
 import "./IVesting.sol";
 
@@ -32,7 +30,6 @@ abstract contract Airdrop is IAirdrop {
         if (address(_token) == address(0)) {
             revert EmptyToken();
         }
-        if (address(_token) == address(0)) revert EmptyToken();
         root = _root;
         token = _token;
         vesting = _vesting;

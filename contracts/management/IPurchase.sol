@@ -52,10 +52,6 @@ interface IPurchase {
         uint256 tokenAmount
     );
 
-    function pause() external;
-
-    function unpause() external;
-
     function setToken(address _token) external;
 
     function token() external view returns (address);

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 import "../../utils/Freezable.sol";
 
-contract MyContractFreezable is Freezable {
+contract MockFreezable is Freezable {
     uint256 value;
 
     function onlyFreezed(uint256 newValue) external whenFreezed(msg.sender) {
