@@ -78,7 +78,7 @@ interface IVesting {
     function distribute(address _to, uint256 _amount) external;
 
     /// @notice Take the current unlocked amount
-    function redeem() external returns (uint256);
+    function redeem(address _to) external returns (uint256);
 
     /// @notice Set the new KPI
     /// @param _code The KPI id code

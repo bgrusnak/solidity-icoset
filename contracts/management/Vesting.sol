@@ -72,24 +72,19 @@ abstract contract Vesting is IVesting {
         amountsDistributed.set(_to, amountsDistributed.get(_to) + _amount);
         emit Distribute(_to, _amount);
     }
-
+ 
     /// @notice Take the current unlocked amount
-    function redeem() external virtual returns (uint256) {
-        return _redeem();
-    }
-
-    /// @notice Take the current unlocked amount
-    function _redeem() internal virtual returns (uint256) {
-        uint256 free = (amountsDistributed.get(msg.sender) * totalKPI) / 1000;
-        if (free <= amountsRedeemed.get(msg.sender))
+    function _redeem(address _to) internal virtual returns (uint256) {
+        uint256 free = (amountsDistributed.get(_to) * totalKPI) / 1000;
+        if (free <= amountsRedeemed.get(_to))
             revert VestingEmptyRedeem();
-        uint256 redeemAmount = free - amountsRedeemed.get(msg.sender);
+        uint256 redeemAmount = free - amountsRedeemed.get(_to);
         amountsRedeemed.set(
-            msg.sender,
-            amountsRedeemed.get(msg.sender) + redeemAmount
+            _to,
+            amountsRedeemed.get(_to) + redeemAmount
         );
-        token.transfer(msg.sender, redeemAmount);
-        emit Redeem(msg.sender, redeemAmount);
+        token.transfer(_to, redeemAmount);
+        emit Redeem(_to, redeemAmount);
         return redeemAmount;
     }
 
