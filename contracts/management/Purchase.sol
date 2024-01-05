@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV2V3Interface.sol";
 import "../utils/IFreezable.sol";
 import "./IPurchase.sol";
+import "./IVesting.sol";
 
 /**
  * @title Purchase
@@ -169,6 +170,8 @@ abstract contract Purchase is IPurchase {
         uint256 amount,
         address referral
     ) internal returns (bool) {
+        if (buyer == address(0)) revert NoBuyerProvided();
+        if (buyer == referral) revert BadReferrer();
         if (amount == 0) revert ZeroAmount(currency, value);
         if (currency != address(0)) {
             uint256 buyerBalance = IERC20(currency).balanceOf(buyer);
@@ -183,6 +186,7 @@ abstract contract Purchase is IPurchase {
         uint256 managerBalance = IERC20(tokenContract).balanceOf(address(this));
         if (managerBalance < amount) revert UnsufficientPurchaseBalance(amount);
         uint256 refCashAmount;
+
         if (referral != address(0) && refCashPercent > 0) {
             refCashAmount = (value * refCashPercent) / 100;
             if (currency == address(0)) {
@@ -219,32 +223,52 @@ abstract contract Purchase is IPurchase {
                     );
             }
         }
-        if (!IERC20(tokenContract).transfer(msg.sender, amount))
-            revert CannotMakeTransfers(
-                address(this),
-                msg.sender,
-                tokenContract,
-                amount
-            );
         uint256 refTokenAmount;
         if (referral != address(0) && refTokenPercent > 0) {
             refTokenAmount =
                 (this.rate(currency) * value * refTokenPercent) /
-                100;
-            if (!IERC20(tokenContract).transfer(referral, refTokenAmount))
+                (10 ** (IERC20Metadata(tokenContract).decimals() + 2));
+        }
+        if (vestingContract == address(0)) {
+            if (!IERC20(tokenContract).transfer(buyer, amount))
                 revert CannotMakeTransfers(
                     address(this),
-                    referral,
+                    buyer,
                     tokenContract,
-                    refTokenAmount
+                    amount
                 );
-            referralsTokens[referral] =
-                referralsTokens[referral] +
-                refTokenAmount;
+            if (refTokenAmount > 0) {
+                if (!IERC20(tokenContract).transfer(referral, refTokenAmount))
+                    revert CannotMakeTransfers(
+                        address(this),
+                        referral,
+                        tokenContract,
+                        refTokenAmount
+                    );
+                referralsTokens[referral] =
+                    referralsTokens[referral] +
+                    refTokenAmount;
+            }
+        } else {
+            if (
+                !IERC20(tokenContract).transfer(
+                    vestingContract,
+                    amount + refTokenAmount
+                )
+            )
+                revert CannotMakeTransfers(
+                    address(this),
+                    vestingContract,
+                    tokenContract,
+                    amount + refTokenAmount
+                );
+            IVesting(vestingContract).distribute(buyer, amount);
+            if (refTokenAmount > 0)
+                IVesting(vestingContract).distribute(referral, refTokenAmount);
         }
         if (refCashAmount > 0 || refTokenAmount > 0) {
             emit ReferralsProvided(
-                msg.sender,
+                buyer,
                 referral,
                 currency,
                 value,
@@ -252,7 +276,7 @@ abstract contract Purchase is IPurchase {
                 refTokenAmount
             );
         }
-        emit BoughtTokens(msg.sender, currency, value, amount);
+        emit BoughtTokens(buyer, currency, value, amount);
         return true;
     }
 

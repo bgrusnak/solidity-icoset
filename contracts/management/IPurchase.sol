@@ -8,6 +8,7 @@ pragma solidity ^0.8.20;
  */
 
 interface IPurchase {
+    error NoBuyerProvided();
     error EmptyToken();
     error EmptyNativeRate();
     error EmptyCurrency();
@@ -21,6 +22,7 @@ interface IPurchase {
     error IncorrectPosition();
     error EmptyChainLink();
     error LowRate();
+    error BadReferrer();
     error ZeroAmount(address currency, uint256 amount);
     error UnsufficientBalance(
         address buyer,

@@ -69,23 +69,45 @@ abstract contract Vesting is IVesting {
     /// @param _amount Distributed amount.
     function _distribute(address _to, uint256 _amount) internal virtual {
         totalDistributed = totalDistributed + _amount;
-        amountsDistributed.set(_to, amountsDistributed.get(_to) + _amount);
+        (bool found, uint256 oldAmount) = amountsDistributed.tryGet(_to);
+        if (found) {
+            amountsDistributed.set(_to, oldAmount + _amount);
+        } else {
+            amountsDistributed.set(_to, _amount);
+        }
         emit Distribute(_to, _amount);
     }
- 
+
+    function distributed(
+        address _to
+    ) external view virtual override returns (uint256) {
+        (bool found, uint256 oldAmount) = amountsDistributed.tryGet(_to);
+        if (found) return oldAmount;
+        return 0;
+    }
+
     /// @notice Take the current unlocked amount
     function _redeem(address _to) internal virtual returns (uint256) {
-        uint256 free = (amountsDistributed.get(_to) * totalKPI) / 1000;
-        if (free <= amountsRedeemed.get(_to))
-            revert VestingEmptyRedeem();
-        uint256 redeemAmount = free - amountsRedeemed.get(_to);
-        amountsRedeemed.set(
-            _to,
-            amountsRedeemed.get(_to) + redeemAmount
-        );
+        (bool found, uint256 oldAmount) = amountsDistributed.tryGet(_to);
+        if (!found) revert VestingEmptyRedeem();
+        uint256 free = (oldAmount * totalKPI) / 1000;
+        if (free <= oldAmount) revert VestingEmptyRedeem();
+        uint256 amountRedeemed = amountsRedeemed.get(_to);
+        uint256 redeemAmount = free - amountRedeemed;
+        amountsRedeemed.set(_to, amountRedeemed + redeemAmount);
         token.transfer(_to, redeemAmount);
         emit Redeem(_to, redeemAmount);
         return redeemAmount;
+    }
+
+    function unlocked(
+        address _to
+    ) external view virtual override returns (uint256) {
+        (bool found, uint256 oldAmount) = amountsDistributed.tryGet(_to);
+        if (!found) return 0;
+        uint256 free = (oldAmount * totalKPI) / 1000;
+        if (free <= oldAmount) return 0;
+        return free - amountsRedeemed.get(_to);
     }
 
     /// @notice Set the new KPI

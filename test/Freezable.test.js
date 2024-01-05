@@ -6,7 +6,7 @@ const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
 describe('Freezable', function () {
   async function fixture() {
     const [owner, other] =  await ethers.getSigners(); 
-    const contract = await ethers.deployContract('MyContractFreezable', []);
+    const contract = await ethers.deployContract('MockFreezable', []);
     return { owner, other, contract };
   }
 

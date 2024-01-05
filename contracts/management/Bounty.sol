@@ -27,9 +27,9 @@ abstract contract Bounty is IBounty {
             revert NoFundsAvailable(totalTokens);
         if (!exists) {
             amountsAvailable.set(agent, addAmount);
-        } else {
-            amountsAvailable.set(agent, addAmount + oldAmount);
+            return;
         }
+        amountsAvailable.set(agent, addAmount + oldAmount);
     }
 
     function _give(address target, uint256 amount) internal {
@@ -43,13 +43,13 @@ abstract contract Bounty is IBounty {
         (bool existsD, uint256 oldAmountD) = amountsDistributed.tryGet(
             msg.sender
         );
-        if (!existsD) {
-            amountsDistributed.set(msg.sender, amount);
-        } else {
-            amountsDistributed.set(msg.sender, oldAmountD + amount);
-        }
         if (!token.transfer(target, amount))
             revert CannotTransferFunds(msg.sender, target, amount);
+        if (!existsD) {
+            amountsDistributed.set(msg.sender, amount);
+            return;
+        }
+        amountsDistributed.set(msg.sender, oldAmountD + amount);
     }
 
     function _empty(address target) internal {

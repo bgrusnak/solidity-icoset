@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 import "../../management/Vesting.sol";
 
+
 contract MockVesting is Vesting {
     constructor(IERC20 _token, IAirdrop _airdrop) Vesting(_token, _airdrop) {}
 
@@ -45,5 +46,9 @@ contract MockVesting is Vesting {
 
     function removeKPI(bytes32 _code) external override {
         _removeKPI(_code);
+    }
+
+    function redeem(address _to) external returns (uint256) {
+        return _redeem(_to);
     }
 }

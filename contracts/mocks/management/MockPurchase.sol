@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-import '../../management/Purchase.sol';
+import "../../management/Purchase.sol";
 
 contract MockPurchase is Purchase {
     constructor(
@@ -30,7 +30,7 @@ contract MockPurchase is Purchase {
         address currency,
         uint256 _rate
     ) external override returns (bool) {
-       return _setRate(currency, _rate);
+        return _setRate(currency, _rate);
     }
 
     function setBonus(uint8 _bonus) external override {
@@ -52,21 +52,42 @@ contract MockPurchase is Purchase {
         return _calculateAmount(currency, value);
     }
 
+    function deposit() external payable override {
+        this.deposit(address(0));
+    }
+
+    function deposit(address referral) external payable override {
+        uint256 amount = _calculateAmount(address(0), msg.value);
+        _buy(msg.sender, address(0), msg.value, amount, referral);
+    }
+
     function buy(
         address currency,
         uint256 value,
         address referral
     ) external override returns (bool) {
-        return
-            _buy(currency, value, _calculateAmount(currency, value), referral);
+        return this.buy(msg.sender, currency, value, referral);
     }
 
-    function redeem(address currency, address _to) external override {
-        _redeem(currency, _to);
+    function buy(
+        address buyer,
+        address currency,
+        uint256 value,
+        address referral
+    ) external override returns (bool) {
+        uint256 amount = _calculateAmount(currency, value);
+        return _buy(buyer, currency, value, amount, referral);
+    }
+
+    function withdraw(address payable _to) external virtual override {
+        _withdraw(_to);
+    }
+
+    function withdraw(address currency, address _to) external override {
+        _withdraw(currency, _to);
     }
 
     function clean(address payable _to, address newOwner) external override {
         _clean(_to, newOwner);
     }
-
 }
