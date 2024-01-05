@@ -14,13 +14,14 @@ interface IPurchase {
     error EmptyRate();
     error TooBigRate(uint256 rate);
     error EmptyValue();
-    error CannotRedeem(address currency);
+    error CannotWithdraw(address currency, address target, uint256 amount);
     error CannotTransfer(address currency);
     error NotOwned(address target);
     error EmptyNewToken();
     error IncorrectPosition();
     error EmptyChainLink();
     error LowRate();
+    error ZeroAmount(address currency, uint256 amount);
     error UnsufficientBalance(
         address buyer,
         address currency,
@@ -109,9 +110,15 @@ interface IPurchase {
         address referral
     ) external returns (bool);
 
+    function deposit() external payable;
+
+    function deposit(address referral) external payable;
+
     function balanceOf(address currency) external view returns (uint256);
 
-    function redeem(address currency, address _to) external;
+    function withdraw(address currency, address _to) external;
+    
+    function withdraw(address payable _to) external;
 
     function clean(address payable _to, address newOwner) external;
 }

@@ -21,7 +21,7 @@ abstract contract Purchase is IPurchase {
 
     address tokenContract;
     address vestingContract;
-    AggregatorV2V3Interface internal  chainLink;
+    AggregatorV2V3Interface internal chainLink;
     uint256 bonusPercent;
     uint256 refCashPercent;
     uint256 refTokenPercent;
@@ -35,13 +35,11 @@ abstract contract Purchase is IPurchase {
         address _chainlink,
         uint256 _native,
         uint256 _bonus
-    ) {
+    ) payable {
         if (_native == 0) revert EmptyNativeRate();
         bonusPercent = 100 + _bonus;
         tokenContract = _token;
-        chainLink =   AggregatorV2V3Interface(
-            _chainlink
-        );
+        chainLink = AggregatorV2V3Interface(_chainlink);
         nativeToUsd = _native;
     }
 
@@ -54,12 +52,9 @@ abstract contract Purchase is IPurchase {
         return tokenContract;
     }
 
-
     function _setChainLinkInterface(address _chainlink) internal {
         if (_chainlink == address(0)) revert EmptyChainLink();
-         chainLink =   AggregatorV2V3Interface(
-            _chainlink
-        );
+        chainLink = AggregatorV2V3Interface(_chainlink);
     }
 
     function chainLinkInterface() external view override returns (address) {
@@ -140,12 +135,14 @@ abstract contract Purchase is IPurchase {
         return uint8(refTokenPercent);
     }
 
-    function _calculateNativeAmount(uint256 value) internal view returns (uint256) {
-       if (address(chainLink) == address(0))  revert EmptyChainLink();
-       // get the source decimals and add 2 because it will be multiplied by bonus percentage
+    function _calculateNativeAmount(
+        uint256 value
+    ) internal view returns (uint256) {
+        if (address(chainLink) == address(0)) revert EmptyChainLink();
+        // get the source decimals and add 2 because it will be multiplied by bonus percentage
         uint256 decimals = chainLink.decimals() + 2;
         int256 currentRate = chainLink.latestAnswer();
-        if (currentRate <=0) revert LowRate();
+        if (currentRate <= 0) revert LowRate();
         return (uint256(currentRate) * value * bonusPercent) / (10 ** decimals);
     }
 
@@ -154,7 +151,8 @@ abstract contract Purchase is IPurchase {
         uint256 value
     ) internal view returns (uint256) {
         // 0 address treating as native coin
-        if (currency == address(0)) {return _calculateNativeAmount(value);
+        if (currency == address(0)) {
+            return _calculateNativeAmount(value);
         }
         if (value == 0) revert EmptyValue();
         if (tokenContract == address(0)) revert EmptyToken();
@@ -165,53 +163,61 @@ abstract contract Purchase is IPurchase {
     }
 
     function _buy(
+        address buyer,
         address currency,
         uint256 value,
         uint256 amount,
         address referral
     ) internal returns (bool) {
-        uint256 buyerBalance = IERC20(currency).balanceOf(msg.sender);
+        if (amount == 0) revert ZeroAmount(currency, value);
+        if (currency != address(0)) {
+            uint256 buyerBalance = IERC20(currency).balanceOf(buyer);
+            if (buyerBalance < value)
+                revert UnsufficientBalance(
+                    buyer,
+                    currency,
+                    buyerBalance,
+                    value
+                );
+        }
         uint256 managerBalance = IERC20(tokenContract).balanceOf(address(this));
-        if (buyerBalance < value)
-            revert UnsufficientBalance(
-                msg.sender,
-                currency,
-                buyerBalance,
-                value
-            );
         if (managerBalance < amount) revert UnsufficientPurchaseBalance(amount);
         uint256 refCashAmount;
         if (referral != address(0) && refCashPercent > 0) {
             refCashAmount = (value * refCashPercent) / 100;
-            if (
-                !IERC20(currency).transferFrom(msg.sender, address(this), value)
-            )
-                revert CannotMakeTransfers(
-                    msg.sender,
-                    address(this),
-                    currency,
-                    value
-                );
-            if (!IERC20(currency).transfer(referral, refCashAmount))
-                revert CannotMakeTransfers(
-                    address(this),
-                    referral,
-                    currency,
-                    refCashAmount
-                );
-            referralsCash[referral][currency] =
-                referralsCash[referral][currency] +
-                refCashAmount;
+            if (currency == address(0)) {
+                (bool success, ) = referral.call{value: refCashAmount}("");
+                if (!success)
+                    revert CannotWithdraw(address(0), referral, refCashAmount);
+            } else {
+                if (!IERC20(currency).transferFrom(buyer, address(this), value))
+                    revert CannotMakeTransfers(
+                        buyer,
+                        address(this),
+                        currency,
+                        value
+                    );
+                if (!IERC20(currency).transfer(referral, refCashAmount))
+                    revert CannotMakeTransfers(
+                        address(this),
+                        referral,
+                        currency,
+                        refCashAmount
+                    );
+                referralsCash[referral][currency] =
+                    referralsCash[referral][currency] +
+                    refCashAmount;
+            }
         } else {
-            if (
-                !IERC20(currency).transferFrom(msg.sender, address(this), value)
-            )
-                revert CannotMakeTransfers(
-                    msg.sender,
-                    address(this),
-                    currency,
-                    value
-                );
+            if (currency != address(0)) {
+                if (!IERC20(currency).transferFrom(buyer, address(this), value))
+                    revert CannotMakeTransfers(
+                        buyer,
+                        address(this),
+                        currency,
+                        value
+                    );
+            }
         }
         if (!IERC20(tokenContract).transfer(msg.sender, amount))
             revert CannotMakeTransfers(
@@ -257,13 +263,24 @@ abstract contract Purchase is IPurchase {
         return IERC20(currency).balanceOf(address(this));
     }
 
-    function _redeem(address currency, address _to) internal {
+    function _withdraw(address payable _to) internal {
+        uint256 amount = address(this).balance;
+        (bool success, ) = _to.call{value: amount}("");
+        if (!success) revert CannotWithdraw(address(0), _to, amount);
+    }
+
+    function _withdraw(address currency, address _to) internal {
         if (
             !IERC20(currency).transfer(
                 _to,
                 IERC20(currency).balanceOf(address(this))
             )
-        ) revert CannotRedeem(currency);
+        )
+            revert CannotWithdraw(
+                currency,
+                _to,
+                IERC20(currency).balanceOf(address(this))
+            );
     }
 
     function _clean(address payable _to, address newOwner) internal {
@@ -281,7 +298,10 @@ abstract contract Purchase is IPurchase {
             (address currency, ) = currencies.at(i);
             balance = IERC20(currency).balanceOf(address(this));
             if (balance > 0 && !IERC20(currency).transfer(_to, balance))
-                revert CannotTransfer(currency);
+                revert CannotWithdraw(currency, _to, balance);
         }
+        uint256 amount = address(this).balance;
+        (bool success, ) = _to.call{value: amount}("");
+        if (!success) revert CannotWithdraw(address(0), _to, amount);
     }
 }
