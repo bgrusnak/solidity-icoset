@@ -110,6 +110,13 @@ interface IPurchase {
         address referral
     ) external returns (bool);
 
+    function buy(
+        address buyer,
+        address currency,
+        uint256 value,
+        address referral
+    ) external returns (bool);
+
     function deposit() external payable;
 
     function deposit(address referral) external payable;
@@ -117,7 +124,7 @@ interface IPurchase {
     function balanceOf(address currency) external view returns (uint256);
 
     function withdraw(address currency, address _to) external;
-    
+
     function withdraw(address payable _to) external;
 
     function clean(address payable _to, address newOwner) external;
