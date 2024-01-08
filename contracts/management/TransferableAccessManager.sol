@@ -26,7 +26,7 @@ abstract contract TransferableAccessManager is AccessManager {
         for (uint256 i = 0; i < _workers.length; i++) workers.add(_workers[i]);
     }
 
-    function haveWorker(address _worker) external virtual returns (bool) {
+    function haveWorker(address _worker) external virtual view returns (bool) {
         if (_worker == address(0)) revert EmptyAddress();
         return workers.contains(_worker);
     }

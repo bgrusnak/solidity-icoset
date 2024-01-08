@@ -24,18 +24,10 @@ const E10000 = ethers.parseEther("10000");
 describe("Purchase", function () {
     async function fixture() {
         const [owner, client, referral] = await ethers.getSigners();
-        const token = await ethers.deployContract(
-            "MockERC20",
-            [E10000],
-            owner
-        );
+        const token = await ethers.deployContract("MockERC20", [E10000], owner);
         const tokenAddress = await token.getAddress();
 
-        const mock = await ethers.deployContract(
-            "MockERC20",
-            [E10000],
-            owner
-        );
+        const mock = await ethers.deployContract("MockERC20", [E10000], owner);
         const mockAddress = await mock.getAddress();
         await mock.transfer(client, E1000);
         const chainlink = await ethers.deployContract(
@@ -52,11 +44,11 @@ describe("Purchase", function () {
         const purchaseAddress = await purchase.getAddress();
         await purchase.setRate(mockAddress, E1);
         const vesting = await ethers.deployContract(
-          "MockVesting",
-          [tokenAddress, tokenAddress],
-          owner
-      );
-      const vestingAddress = await vesting.getAddress();
+            "MockVesting",
+            [tokenAddress, tokenAddress],
+            owner
+        );
+        const vestingAddress = await vesting.getAddress();
         return {
             owner,
             client,
@@ -69,8 +61,8 @@ describe("Purchase", function () {
             mock,
             mockAddress,
             referral,
-            vesting, 
-            vestingAddress
+            vesting,
+            vestingAddress,
         };
     }
 
@@ -128,8 +120,8 @@ describe("Purchase", function () {
     });
 
     it("Purchase with tokens with empty vesting is processed with bonus", async function () {
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-      expect(await this.token.transfer(this.purchaseAddress, E200));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.token.transfer(this.purchaseAddress, E200));
         expect(
             await this.mock
                 .connect(this.client)
@@ -140,9 +132,8 @@ describe("Purchase", function () {
                 .connect(this.client)
                 .buy(this.mockAddress, E100, zeroAddress)
         ).to.be.exist;
-        expect(await this.token.balanceOf(this.client)).to.equal(E120)
+        expect(await this.token.balanceOf(this.client)).to.equal(E120);
     });
- 
 
     it("Purchase with ether falling if the purchase contract haven't funds", async function () {
         expect(await this.token.balanceOf(this.client.address)).to.equal(0);
@@ -155,54 +146,57 @@ describe("Purchase", function () {
             "UnsufficientPurchaseBalance"
         );
     });
- 
 
     it("Purchase with ether with empty vesting is processed with bonus", async function () {
-      await this.token.transfer(this.purchaseAddress, E1000);
-      expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(0);
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0);
-      expect( await this.purchase
-          .connect(this.client)
-          .deposit(zeroAddress, { value: E1 }));
+        await this.token.transfer(this.purchaseAddress, E1000);
+        expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(
+            0
+        );
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(
+            await this.purchase
+                .connect(this.client)
+                .deposit(zeroAddress, { value: E1 })
+        );
         expect(await this.token.balanceOf(this.client.address)).to.equal(E240);
-        expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(E1);
+        expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(
+            E1
+        );
     });
 
-
     it("Purchase is failed if the referral is itself", async function () {
-      await expect( this.purchase
-          .connect(this.client)
-          .deposit(this.client.address, { value: ethers.parseEther("1") })).to.be.revertedWithCustomError(
-            this.purchase,
-            "BadReferrer"
-        ); 
+        await expect(
+            this.purchase
+                .connect(this.client)
+                .deposit(this.client.address, { value: ethers.parseEther("1") })
+        ).to.be.revertedWithCustomError(this.purchase, "BadReferrer");
     });
 
     it("Purchase with empty buyer cannot be passed", async function () {
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-      expect(await this.token.transfer(this.purchaseAddress, E200));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.token.transfer(this.purchaseAddress, E200));
         expect(
             await this.mock
                 .connect(this.client)
                 .approve(this.purchaseAddress, E100)
         );
         await expect(
-          this.purchase
-              .connect(this.client)
-               ["buy(address,address,uint256,address)"](zeroAddress, this.mockAddress, E200, zeroAddress)
-      ).to.be.revertedWithCustomError(
-          this.purchase,
-          "NoBuyerProvided"
-      );
-        
+            this.purchase
+                .connect(this.client)
+                ["buy(address,address,uint256,address)"](
+                    zeroAddress,
+                    this.mockAddress,
+                    E200,
+                    zeroAddress
+                )
+        ).to.be.revertedWithCustomError(this.purchase, "NoBuyerProvided");
     });
 
-
     it("Purchase with tokens with empty vesting and referral in tokens is processed", async function () {
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-      expect(await this.token.balanceOf(this.referral.address)).to.equal(0)
-      expect(await this.purchase.setTokenPercent(10))
-      expect(await this.token.transfer(this.purchaseAddress, E200));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.token.balanceOf(this.referral.address)).to.equal(0);
+        expect(await this.purchase.setTokenPercent(10));
+        expect(await this.token.transfer(this.purchaseAddress, E200));
         expect(
             await this.mock
                 .connect(this.client)
@@ -213,15 +207,15 @@ describe("Purchase", function () {
                 .connect(this.client)
                 .buy(this.mockAddress, E100, this.referral.address)
         ).to.be.exist;
-        expect(await this.token.balanceOf(this.client.address)).to.equal(E120)
-        expect(await this.token.balanceOf(this.referral.address)).to.equal(E10)
+        expect(await this.token.balanceOf(this.client.address)).to.equal(E120);
+        expect(await this.token.balanceOf(this.referral.address)).to.equal(E10);
     });
 
     it("Purchase with tokens with empty vesting and referral in original coins is processed", async function () {
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-      expect(await this.mock.balanceOf(this.referral.address)).to.equal(0)
-      expect(await this.purchase.setCashPercent(10))
-      expect(await this.token.transfer(this.purchaseAddress, E200));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.mock.balanceOf(this.referral.address)).to.equal(0);
+        expect(await this.purchase.setCashPercent(10));
+        expect(await this.token.transfer(this.purchaseAddress, E200));
         expect(
             await this.mock
                 .connect(this.client)
@@ -232,29 +226,36 @@ describe("Purchase", function () {
                 .connect(this.client)
                 .buy(this.mockAddress, E100, this.referral.address)
         ).to.be.exist;
-        expect(await this.token.balanceOf(this.client.address)).to.equal(E120)
-        expect(await this.mock.balanceOf(this.referral.address)).to.equal(E10)
+        expect(await this.token.balanceOf(this.client.address)).to.equal(E120);
+        expect(await this.mock.balanceOf(this.referral.address)).to.equal(E10);
     });
- 
- 
+
     it("Purchase with ether with empty vesting and referral in original coins is processed ", async function () {
-      await this.token.transfer(this.purchaseAddress, E10000);
-      expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(0);
-      const old = await ethers.provider.getBalance(this.referral.address);
-      expect(await this.purchase.setCashPercent(10))
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0);
-      expect( await this.purchase
-          .connect(this.client)
-          .deposit(this.referral.address, { value: E10 }));
+        await this.token.transfer(this.purchaseAddress, E10000);
+        expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(
+            0
+        );
+        const old = await ethers.provider.getBalance(this.referral.address);
+        expect(await this.purchase.setCashPercent(10));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(
+            await this.purchase
+                .connect(this.client)
+                .deposit(this.referral.address, { value: E10 })
+        );
         expect(await this.token.balanceOf(this.client.address)).to.equal(E2400);
-        expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(E9);
-        expect(await ethers.provider.getBalance(this.referral.address)).to.equal(E1+old);
+        expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(
+            E9
+        );
+        expect(
+            await ethers.provider.getBalance(this.referral.address)
+        ).to.equal(E1 + old);
     });
 
     it("Purchase with tokens with vesting is processed", async function () {
-      expect(await this.purchase.setVesting(this.vestingAddress))
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-      expect(await this.token.transfer(this.purchaseAddress, E200));
+        expect(await this.purchase.setVesting(this.vestingAddress));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.token.transfer(this.purchaseAddress, E200));
         expect(
             await this.mock
                 .connect(this.client)
@@ -265,15 +266,17 @@ describe("Purchase", function () {
                 .connect(this.client)
                 .buy(this.mockAddress, E100, zeroAddress)
         ).to.be.exist;
-        expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-        expect(await this.vesting.distributed(this.client.address)).to.equal(E120)
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.vesting.distributed(this.client.address)).to.equal(
+            E120
+        );
     });
 
     it("Purchase with tokens with vesting and referral is processed", async function () {
-      expect(await this.purchase.setVesting(this.vestingAddress))
-      expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-      expect(await this.purchase.setTokenPercent(10))
-      expect(await this.token.transfer(this.purchaseAddress, E200));
+        expect(await this.purchase.setVesting(this.vestingAddress));
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.purchase.setTokenPercent(10));
+        expect(await this.token.transfer(this.purchaseAddress, E200));
         expect(
             await this.mock
                 .connect(this.client)
@@ -284,10 +287,12 @@ describe("Purchase", function () {
                 .connect(this.client)
                 .buy(this.mockAddress, E100, this.referral.address)
         ).to.be.exist;
-        expect(await this.token.balanceOf(this.client.address)).to.equal(0)
-        expect(await this.vesting.distributed(this.client.address)).to.equal(E120)
-        expect(await this.vesting.distributed(this.referral.address)).to.equal(E10)
+        expect(await this.token.balanceOf(this.client.address)).to.equal(0);
+        expect(await this.vesting.distributed(this.client.address)).to.equal(
+            E120
+        );
+        expect(await this.vesting.distributed(this.referral.address)).to.equal(
+            E10
+        );
     });
- 
- 
 });
