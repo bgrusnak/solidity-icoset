@@ -11,13 +11,13 @@ abstract contract Bounty is IBounty {
     EnumerableMap.AddressToUintMap private amountsDistributed;
     EnumerableMap.AddressToUintMap private amountsAvailable;
     address private token;
-    address private vesting;
+    address private vestingAddress;
     uint256 totalTokens;
 
     constructor(address _token, address _vesting) {
         if (_token == address(0)) revert EmptyToken();
         token = _token;
-        vesting = _vesting;
+        vestingAddress = _vesting;
     }
 
     function _refuel(address agent, uint256 addAmount) internal {
@@ -43,10 +43,10 @@ abstract contract Bounty is IBounty {
         (bool existsD, uint256 oldAmountD) = amountsDistributed.tryGet(
             msg.sender
         );
-        if (vesting == address(0)) {
-            if (!IERC20(token).transfer(vesting, amount))
-                revert CannotTransferFunds(msg.sender, vesting, amount);
-            IVesting(vesting).distribute(target, amount);
+        if (vestingAddress == address(0)) {
+            if (!IERC20(token).transfer(vestingAddress, amount))
+                revert CannotTransferFunds(msg.sender, vestingAddress, amount);
+            IVesting(vestingAddress).distribute(target, amount);
         } else {
             if (!IERC20(token).transfer(target, amount))
                 revert CannotTransferFunds(msg.sender, target, amount);
@@ -64,6 +64,14 @@ abstract contract Bounty is IBounty {
 
     function _clean(address _to) internal {
         IERC20(token).transfer(_to, IERC20(token).balanceOf(address(this)));
+    }
+
+    function vesting() external view returns (address) {
+        return vestingAddress;
+    }
+
+    function _setVesting(address _vesting) internal {
+        vestingAddress = _vesting;
     }
 
     function balanceOf(address target) external view returns (uint256) {

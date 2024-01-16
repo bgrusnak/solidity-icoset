@@ -31,6 +31,10 @@ interface IBounty {
 
     function clean(address _to) external;
 
+    function vesting(address _vesting) external;
+
+    function setVesting() external view returns (address);
+
     function balanceOf(address target) external view returns (uint256);
 
     function isAgent(address target) external view returns (bool);
