@@ -10,12 +10,12 @@ abstract contract Bounty is IBounty {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     EnumerableMap.AddressToUintMap private amountsDistributed;
     EnumerableMap.AddressToUintMap private amountsAvailable;
-    IERC20 private token;
-    IVesting private vesting;
+    address private token;
+    address private vesting;
     uint256 totalTokens;
 
-    constructor(IERC20 _token, IVesting _vesting) {
-        if (address(_token) == address(0)) revert EmptyToken();
+    constructor(address _token, address _vesting) {
+        if (_token == address(0)) revert EmptyToken();
         token = _token;
         vesting = _vesting;
     }
@@ -23,7 +23,7 @@ abstract contract Bounty is IBounty {
     function _refuel(address agent, uint256 addAmount) internal {
         (bool exists, uint256 oldAmount) = amountsAvailable.tryGet(agent);
         totalTokens = totalTokens + addAmount;
-        if (token.balanceOf(address(this)) < totalTokens)
+        if (IERC20(token).balanceOf(address(this)) < totalTokens)
             revert NoFundsAvailable(totalTokens);
         if (!exists) {
             amountsAvailable.set(agent, addAmount);
@@ -36,18 +36,24 @@ abstract contract Bounty is IBounty {
         (bool exists, uint256 oldAmount) = amountsAvailable.tryGet(msg.sender);
         if (!exists) revert AgentNotDefined(msg.sender, target);
         if (oldAmount < amount) revert NoFundsPermitted(msg.sender, amount);
-        if (token.balanceOf(address(this)) < amount)
+        if (IERC20(token).balanceOf(address(this)) < amount)
             revert NoPermittedFundsAvailable(msg.sender, amount);
         totalTokens = totalTokens - amount;
         amountsAvailable.set(msg.sender, oldAmount - amount);
         (bool existsD, uint256 oldAmountD) = amountsDistributed.tryGet(
             msg.sender
         );
-        if (!token.transfer(target, amount))
-            revert CannotTransferFunds(msg.sender, target, amount);
-        if (!existsD) {
-            amountsDistributed.set(msg.sender, amount);
-            return;
+        if (vesting == address(0)) {
+            if (!IERC20(token).transfer(vesting, amount))
+                revert CannotTransferFunds(msg.sender, vesting, amount);
+            IVesting(vesting).distribute(target, amount);
+        } else {
+            if (!IERC20(token).transfer(target, amount))
+                revert CannotTransferFunds(msg.sender, target, amount);
+            if (!existsD) {
+                amountsDistributed.set(msg.sender, amount);
+                return;
+            }
         }
         amountsDistributed.set(msg.sender, oldAmountD + amount);
     }
@@ -57,7 +63,7 @@ abstract contract Bounty is IBounty {
     }
 
     function _clean(address _to) internal {
-        token.transfer(_to, token.balanceOf(address(this)));
+        IERC20(token).transfer(_to, IERC20(token).balanceOf(address(this)));
     }
 
     function balanceOf(address target) external view returns (uint256) {

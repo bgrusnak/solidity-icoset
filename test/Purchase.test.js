@@ -162,6 +162,9 @@ describe("Purchase", function () {
         expect(await ethers.provider.getBalance(this.purchaseAddress)).to.equal(
             E1
         );
+        expect(await this.token.balanceOf(this.purchaseAddress)).to.equal(
+            ethers.parseEther("760")
+        );
     });
 
     it("Purchase is failed if the referral is itself", async function () {
