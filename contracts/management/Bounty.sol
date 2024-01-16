@@ -50,10 +50,10 @@ abstract contract Bounty is IBounty {
         } else {
             if (!IERC20(token).transfer(target, amount))
                 revert CannotTransferFunds(msg.sender, target, amount);
-            if (!existsD) {
-                amountsDistributed.set(msg.sender, amount);
-                return;
-            }
+        }
+        if (!existsD) {
+            amountsDistributed.set(msg.sender, amount);
+            return;
         }
         amountsDistributed.set(msg.sender, oldAmountD + amount);
     }
