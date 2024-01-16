@@ -31,9 +31,9 @@ interface IBounty {
 
     function clean(address _to) external;
 
-    function vesting(address _vesting) external;
+    function vesting() external view returns (address);
 
-    function setVesting() external view returns (address);
+    function setVesting(address _vesting) external;
 
     function balanceOf(address target) external view returns (uint256);
 

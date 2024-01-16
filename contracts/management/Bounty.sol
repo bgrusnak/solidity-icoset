@@ -66,7 +66,7 @@ abstract contract Bounty is IBounty {
         IERC20(token).transfer(_to, IERC20(token).balanceOf(address(this)));
     }
 
-    function vesting() external view returns (address) {
+    function vesting() external view override returns (address) {
         return vestingAddress;
     }
 
@@ -74,7 +74,7 @@ abstract contract Bounty is IBounty {
         vestingAddress = _vesting;
     }
 
-    function balanceOf(address target) external view returns (uint256) {
+    function balanceOf(address target) external view override returns (uint256) {
         (bool exists, uint256 amount) = amountsAvailable.tryGet(target);
         if (!exists) return 0;
         return amount;
