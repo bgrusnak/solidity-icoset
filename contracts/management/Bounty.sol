@@ -43,7 +43,7 @@ abstract contract Bounty is IBounty {
         (bool existsD, uint256 oldAmountD) = amountsDistributed.tryGet(
             msg.sender
         );
-        if (vestingAddress == address(0)) {
+        if (vestingAddress != address(0)) {
             if (!IERC20(token).transfer(vestingAddress, amount))
                 revert CannotTransferFunds(msg.sender, vestingAddress, amount);
             IVesting(vestingAddress).distribute(target, amount);
