@@ -92,8 +92,11 @@ abstract contract Vesting is IVesting {
         if (!found) revert VestingEmptyRedeem();
         uint256 free = (oldAmount * totalKPI) / 1000;
         if (free <= oldAmount) revert VestingEmptyRedeem();
-        uint256 amountRedeemed = amountsRedeemed.get(_to);
-        uint256 redeemAmount = free - amountRedeemed;
+        (bool foundR, uint256 amountRedeemed) = amountsRedeemed.tryGet(_to);
+        uint256 redeemAmount = free;
+        if (foundR) {
+            redeemAmount = free - amountRedeemed;
+        }
         amountsRedeemed.set(_to, amountRedeemed + redeemAmount);
         token.transfer(_to, redeemAmount);
         emit Redeem(_to, redeemAmount);
