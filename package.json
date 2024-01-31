@@ -1,6 +1,6 @@
 {
   "name": "@bgrusnak/solidity-icoset",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/bgrusnak/solidity-icoset.git"
