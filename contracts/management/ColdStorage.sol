@@ -109,7 +109,7 @@ abstract contract ColdStorage is IColdStorage {
         return 0;
     }
 
-    function enabled(
+    function unlocked(
         address _to
     ) external view virtual override returns (uint256) {
         (bool found, uint256 oldAmount) = amountsEnabled.tryGet(_to);
